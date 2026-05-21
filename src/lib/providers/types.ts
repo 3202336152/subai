@@ -14,6 +14,24 @@ export interface ProviderConfig {
   headerFormat: 'openai' | 'anthropic' | 'azure';  // Auth header format
   envKeyField: string;             // Env var name for API keys
   envBaseUrlField?: string;        // Env var name for custom base URL
+  models?: ModelInfo[];            // Supported models list
+}
+
+/**
+ * Model metadata for /v1/models endpoint.
+ */
+export interface ModelInfo {
+  id: string;                      // e.g. 'gpt-4o', 'claude-3-5-sonnet'
+  displayName: string;             // e.g. 'GPT-4o', 'Claude 3.5 Sonnet'
+  contextWindow: number;           // Max context tokens
+  maxOutput?: number;              // Max output tokens
+  supportsStream?: boolean;        // Supports streaming
+  supportsVision?: boolean;        // Supports image input
+  supportsTools?: boolean;         // Supports function/tool calling
+  pricing?: {                      // Per-token pricing (USD)
+    input: number;                 // Per 1M input tokens
+    output: number;                // Per 1M output tokens
+  };
 }
 
 /**
