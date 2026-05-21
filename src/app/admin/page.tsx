@@ -10,6 +10,11 @@ interface ProviderInfo {
   availableKeys: number;
   configured: boolean;
   modelPrefixes: string[];
+  errors?: Record<string, number>;
+  keyErrors?: Array<{
+    keyHash: string;
+    errors: Record<string, { count: number; reason: string }>;
+  }>;
 }
 
 interface AdminData {
@@ -220,6 +225,60 @@ export default function AdminPage() {
 
       {/* Token Consumption Trend */}
       <TokenTrendChart apiKey={apiKey} />
+
+      {/* Error Statistics */}
+      {data!.providers.some((p) => p.errors && Object.keys(p.errors).length > 0) && (
+        <section style={{
+          padding: '1.5rem', borderRadius: '12px', border: '1px solid #333',
+          backgroundColor: '#111', marginBottom: '1.5rem',
+        }}>
+          <h2 style={{ fontSize: '1.2rem', marginTop: 0 }}>🚨 API Errors (Today)</h2>
+          {data!.providers
+            .filter((p) => p.errors && Object.keys(p.errors).length > 0)
+            .map((p) => (
+              <div key={p.id} style={{ marginBottom: '1.2rem' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#f87171' }}>
+                  {p.name}
+                </div>
+                {/* Summary by status code */}
+                <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                  {Object.entries(p.errors!).map(([code, count]) => (
+                    <span key={code} style={{
+                      padding: '0.25rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem',
+                      backgroundColor: code === '429' ? '#78350f' : code.startsWith('4') ? '#7f1d1d' : '#1e1e1e',
+                      color: code === '429' ? '#fbbf24' : code.startsWith('4') ? '#fca5a5' : '#888',
+                      border: '1px solid #333',
+                    }}>
+                      HTTP {code}: <strong>{count}</strong> 次
+                    </span>
+                  ))}
+                </div>
+                {/* Per-key breakdown */}
+                {p.keyErrors && p.keyErrors.length > 0 && (
+                  <div style={{ marginLeft: '1rem', fontSize: '0.8rem', color: '#666' }}>
+                    {p.keyErrors.map((ke) => (
+                      <div key={ke.keyHash} style={{ marginBottom: '0.3rem' }}>
+                        <span style={{ fontFamily: 'monospace', color: '#888' }}>
+                          key:{ke.keyHash.slice(0, 8)}
+                        </span>
+                        {Object.entries(ke.errors).map(([code, detail]) => (
+                          <span key={code} style={{ marginLeft: '0.8rem' }}>
+                            <span style={{ color: '#f87171' }}>{code}×{detail.count}</span>
+                            {detail.reason && (
+                              <span style={{ color: '#555', marginLeft: '0.3rem' }}>
+                                — {detail.reason}
+                              </span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+        </section>
+      )}
 
       {/* Provider Key Pools */}
       <section style={{

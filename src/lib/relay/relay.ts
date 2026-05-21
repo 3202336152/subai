@@ -20,6 +20,19 @@ import {
 const usageStorage = new KVUsageStorage();
 
 /**
+ * Record an upstream error to KV for admin dashboard tracking.
+ * Fire-and-forget — never blocks the request.
+ */
+function recordError(
+  provider: string,
+  keyHash: string,
+  statusCode: number,
+  reason: string
+): void {
+  usageStorage.recordError({ provider, keyHash, statusCode, reason }).catch(() => {});
+}
+
+/**
  * Core relay function — forwards a chat completion request to the upstream provider.
  * Supports both streaming and non-streaming.
  *
@@ -112,6 +125,7 @@ export async function relayRequest(
       if (upstreamResponse.status === 429) {
         record429(provider.name);
         markCooldown(currentKey);
+        recordError(provider.name, currentKey.hash, 429, 'Rate limited by upstream');
         const nextKey = selectKey(provider);
         if (nextKey && nextKey.hash !== currentKey.hash) {
           currentKey = nextKey;
@@ -123,6 +137,7 @@ export async function relayRequest(
       // 401/403 → key invalid/expired, rotate to next key
       if (upstreamResponse.status === 401 || upstreamResponse.status === 403) {
         markCooldown(currentKey);
+        recordError(provider.name, currentKey.hash, upstreamResponse.status, 'Auth failed — key invalid or expired');
         const nextKey = selectKey(provider);
         if (nextKey && nextKey.hash !== currentKey.hash) {
           currentKey = nextKey;
@@ -134,6 +149,7 @@ export async function relayRequest(
       // 5xx → try next key (but don't count as 429 for circuit breaker)
       if (upstreamResponse.status >= 500) {
         markCooldown(currentKey);
+        recordError(provider.name, currentKey.hash, upstreamResponse.status, 'Upstream server error');
         const nextKey = selectKey(provider);
         if (nextKey && nextKey.hash !== currentKey.hash) {
           currentKey = nextKey;

@@ -2,7 +2,7 @@
 # ============================================================
 # AI Relay — 快速添加 API Key
 # 用法: ./scripts/add-api-key.sh <provider> <api_key>
-# 示例: ./scripts/add-api-key.sh xiaomi sk-xxxx
+# 示例: ./scripts/add-api-key.sh xiaomimimo_sgp tp-xxxx
 #       ./scripts/add-api-key.sh openai sk-xxxx
 # ============================================================
 
@@ -12,12 +12,14 @@ PROVIDER="${1:-}"
 API_KEY="${2:-}"
 VERCEL_PROJECT="prj_zFB3nw3D1WSXtrh3Bml9pJpfe3wt"
 
-# Provider → Env var name / Test model / Test URL
+# Provider → Env var name / Test model / Test URL / Header format
 declare -A ENV_KEYS=(
   [openai]="OPENAI_KEYS"
   [anthropic]="CLAUDE_KEYS"
   [deepseek]="DEEPSEEK_KEYS"
   [xiaomi]="XIAOMI_KEYS"
+  [xiaomimimo]="XIAOMIMIMO_KEYS"
+  [xiaomimimo_sgp]="XIAOMIMIMO_SGP_KEYS"
 )
 
 declare -A TEST_MODELS=(
@@ -25,6 +27,8 @@ declare -A TEST_MODELS=(
   [anthropic]="claude-3-5-haiku-20241022"
   [deepseek]="deepseek-chat"
   [xiaomi]="mimo-v2.5-pro"
+  [xiaomimimo]="mimo-v2.5-pro"
+  [xiaomimimo_sgp]="mimo-v2.5-pro"
 )
 
 declare -A TEST_URLS=(
@@ -32,26 +36,42 @@ declare -A TEST_URLS=(
   [anthropic]="https://api.anthropic.com/v1/messages"
   [deepseek]="https://api.deepseek.com/v1/chat/completions"
   [xiaomi]="https://api.xiaomi.com/v1/chat/completions"
+  [xiaomimimo]="https://token-plan-cn.xiaomimimo.com/v1/chat/completions"
+  [xiaomimimo_sgp]="https://token-plan-sgp.xiaomimimo.com/v1/chat/completions"
 )
 
 declare -A DISPLAY_NAMES=(
   [openai]="OpenAI"
   [anthropic]="Anthropic (Claude)"
   [deepseek]="DeepSeek"
-  [xiaomi]="Xiaomi (MiMo)"
+  [xiaomi]="Xiaomi (MiMo CN)"
+  [xiaomimimo]="Xiaomi MiMo (CN)"
+  [xiaomimimo_sgp]="Xiaomi MiMo (SGP)"
+)
+
+# Header format: openai = Authorization Bearer, azure = api-key header, anthropic = x-api-key
+declare -A HEADER_FORMAT=(
+  [openai]="openai"
+  [anthropic]="anthropic"
+  [deepseek]="openai"
+  [xiaomi]="openai"
+  [xiaomimimo]="azure"
+  [xiaomimimo_sgp]="azure"
 )
 
 usage() {
   echo "用法: $0 <provider> <api_key>"
   echo ""
   echo "支持的 provider:"
-  echo "  openai     — OpenAI (GPT 系列)"
-  echo "  anthropic  — Anthropic (Claude 系列)"
-  echo "  deepseek   — DeepSeek"
-  echo "  xiaomi     — Xiaomi (MiMo 系列)"
+  echo "  openai          — OpenAI (GPT 系列)"
+  echo "  anthropic       — Anthropic (Claude 系列)"
+  echo "  deepseek        — DeepSeek"
+  echo "  xiaomi          — Xiaomi (MiMo CN)"
+  echo "  xiaomimimo      — Xiaomi MiMo (CN, token-plan-cn)"
+  echo "  xiaomimimo_sgp  — Xiaomi MiMo (SGP, token-plan-sgp)"
   echo ""
   echo "示例:"
-  echo "  $0 xiaomi sk-xxxx"
+  echo "  $0 xiaomimimo_sgp tp-xxxx"
   echo "  $0 openai sk-proj-xxxx"
   exit 1
 }
@@ -69,6 +89,7 @@ ENV_KEY="${ENV_KEYS[$PROVIDER]}"
 TEST_MODEL="${TEST_MODELS[$PROVIDER]}"
 TEST_URL="${TEST_URLS[$PROVIDER]}"
 DISPLAY="${DISPLAY_NAMES[$PROVIDER]}"
+FMT="${HEADER_FORMAT[$PROVIDER]}"
 
 echo "🔑 添加 $DISPLAY API Key"
 echo "   Env: $ENV_KEY"
@@ -78,12 +99,22 @@ echo ""
 # ── Step 1: 测试 Key 可用性 ──────────────────────────────
 echo "📡 测试 Key 可用性..."
 
-if [[ "$PROVIDER" == "anthropic" ]]; then
-  # Anthropic 用不同的 header 格式
+if [[ "$FMT" == "anthropic" ]]; then
   HTTP_CODE=$(curl -s -o /tmp/airelay-test-resp.json -w "%{http_code}" \
     "$TEST_URL" \
     -H "x-api-key: $API_KEY" \
     -H "anthropic-version: 2023-06-01" \
+    -H "content-type: application/json" \
+    -d "{
+      \"model\": \"$TEST_MODEL\",
+      \"max_tokens\": 5,
+      \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}]
+    }" 2>/dev/null || echo "000")
+elif [[ "$FMT" == "azure" ]]; then
+  # Azure header format (xiaomimimo)
+  HTTP_CODE=$(curl -s -o /tmp/airelay-test-resp.json -w "%{http_code}" \
+    "$TEST_URL" \
+    -H "api-key: $API_KEY" \
     -H "content-type: application/json" \
     -d "{
       \"model\": \"$TEST_MODEL\",

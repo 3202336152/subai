@@ -153,6 +153,119 @@ export class KVUsageStorage implements UsageStorage {
     }
   }
 
+  /**
+   * Record an API error for tracking.
+   * KV keys:
++   *   error:{provider}:{date} → hash {status:count, ...}
++   *   error:key:{keyHash}:{date} → hash {status:count, reason:...}
++   */
+  async recordError(event: {
+    provider: string;
+    keyHash: string;
+    statusCode: number;
+    reason: string;
+  }): Promise<void> {
+    try {
+      const kv = await getKV();
+      if (!kv) return;
+
+      const date = today();
+      const status = String(event.statusCode);
+
+      // Per-provider daily error counts
+      const providerKey = `error:${event.provider}:${date}`;
+      await kv.hincrby(providerKey, status, 1);
+      await kv.expire(providerKey, 86400 * 7);
+
+      // Per-key daily error details
+      const keyErrorKey = `error:key:${event.keyHash}:${date}`;
+      await kv.hincrby(keyErrorKey, status, 1);
+      // Store latest reason for this status code
+      await kv.hset(keyErrorKey, `reason:${status}`, event.reason.slice(0, 200));
+      await kv.expire(keyErrorKey, 86400 * 7);
+
+      // Track which key hashes had errors today (for efficient lookup)
+      const indexKey = `error:keys:${date}`;
+      await kv.sadd(indexKey, event.keyHash);
+      await kv.expire(indexKey, 86400 * 7);
+    } catch {
+      // Non-critical
+    }
+  }
+
+  /**
+   * Get error stats for all providers (today).
+   */
+  async getErrorStats(): Promise<Record<string, Record<string, number>>> {
+    try {
+      const kv = await getKV();
+      if (!kv) return {};
+
+      const date = today();
+      const result: Record<string, Record<string, number>> = {};
+
+      for (const provider of PROVIDER_NAMES) {
+        const raw = await kv.hgetall(`error:${provider}:${date}`);
+        if (raw && Object.keys(raw).length > 0) {
+          result[provider] = {};
+          for (const [code, count] of Object.entries(raw)) {
+            result[provider][code] = Number(count);
+          }
+        }
+      }
+      return result;
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * Get per-key error details (today).
+   */
+  async getKeyErrors(): Promise<Array<{
+    keyHash: string;
+    errors: Record<string, { count: number; reason: string }>;
+  }>> {
+    try {
+      const kv = await getKV();
+      if (!kv) return [];
+
+      const date = today();
+      const results: Array<{
+        keyHash: string;
+        errors: Record<string, { count: number; reason: string }>;
+      }> = [];
+
+      // Get all key hashes that had errors today from the SET
+      const indexKey = `error:keys:${date}`;
+      const keyHashes = await kv.smembers(indexKey);
+      if (!keyHashes || keyHashes.length === 0) return [];
+
+      for (const keyHash of keyHashes) {
+        const redisKey = `error:key:${keyHash}:${date}`;
+        const raw = await kv.hgetall(redisKey);
+        if (!raw) continue;
+
+        const errors: Record<string, { count: number; reason: string }> = {};
+        for (const [field, value] of Object.entries(raw)) {
+          if (String(field).startsWith('reason:')) continue;
+          errors[String(field)] = {
+            count: Number(value),
+            reason: String(raw[`reason:${String(field)}`] || ''),
+          };
+        }
+
+        if (Object.keys(errors).length > 0) {
+          results.push({ keyHash: String(keyHash), errors });
+        }
+      }
+
+      return results;
+    } catch {
+      return [];
+    }
+  }
+
   async getKeyUsage(keyHash: string): Promise<{
     daily: { requests: number; tokens: number };
     total: { requests: number; tokens: number };

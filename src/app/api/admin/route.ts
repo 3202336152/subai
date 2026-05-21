@@ -51,10 +51,38 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  // Fetch error stats
+  const errorStats = await usageStorage.getErrorStats();
+  const keyErrors = await usageStorage.getKeyErrors();
+
+  // Build keyHash → provider mapping from key pool stats
+  const keyHashToProvider: Record<string, string> = {};
+  for (const [provider, stat] of Object.entries(providerStats)) {
+    for (const hash of (stat as any).keyHashes || []) {
+      keyHashToProvider[hash] = provider;
+    }
+  }
+
+  // Attach per-key errors to providers
+  const providersWithErrors = providers.map((p) => {
+    const providerErrors = errorStats[p.id] || {};
+    const providerKeyErrors: Array<{ keyHash: string; errors: Record<string, { count: number; reason: string }> }> = [];
+    for (const ke of keyErrors) {
+      if (keyHashToProvider[ke.keyHash] === p.id) {
+        providerKeyErrors.push({ keyHash: ke.keyHash, errors: ke.errors });
+      }
+    }
+    return {
+      ...p,
+      errors: providerErrors,
+      keyErrors: providerKeyErrors,
+    };
+  });
+
   return Response.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    providers,
+    providers: providersWithErrors,
     usage: globalUsage || { requests: 0, tokens: 0 },
     quota: {
       daily: { used: quota.dailyUsed, limit: quota.dailyLimit || 'unlimited' },

@@ -120,15 +120,19 @@ export function initAllKeyPools(configs: Record<string, { envKeyField: string; n
 /**
  * Get key pool stats for admin/status page.
  */
-export function getKeyPoolStats(): Record<string, { total: number; available: number }> {
+export function getKeyPoolStats(): Record<string, { total: number; available: number; keyHashes: string[] }> {
   const now = Date.now();
-  const stats: Record<string, { total: number; available: number }> = {};
+  const stats: Record<string, { total: number; available: number; keyHashes: string[] }> = {};
 
   for (const [name, pool] of keyPools) {
     const available = pool.keys.filter(
       (k) => !cooldowns.has(k.hash) || now >= cooldowns.get(k.hash)!
     ).length;
-    stats[name] = { total: pool.keys.length, available };
+    stats[name] = {
+      total: pool.keys.length,
+      available,
+      keyHashes: pool.keys.map((k) => k.hash),
+    };
   }
 
   return stats;
