@@ -12,7 +12,7 @@ import type {
 import { withTimeout } from '@/lib/utils/timeout';
 
 /** Known provider names for trend queries */
-const PROVIDER_NAMES = ['openai', 'anthropic', 'deepseek', 'xiaomimimo', 'xiaomi', 'lpgpt'];
+const PROVIDER_NAMES = ['openai', 'anthropic', 'deepseek', 'xiaomi_sgp_coding', 'xiaomi', 'xiaomi_coding', 'lpgpt'];
 
 /**
  * Get today's date string in YYYY-MM-DD format.

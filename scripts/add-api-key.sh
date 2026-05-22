@@ -2,7 +2,7 @@
 # ============================================================
 # AI Relay — 快速添加 API Key
 # 用法: ./scripts/add-api-key.sh <provider> <api_key>
-# 示例: ./scripts/add-api-key.sh xiaomimimo_sgp tp-xxxx
+# 示例: ./scripts/add-api-key.sh xiaomi tp-xxxx
 #       ./scripts/add-api-key.sh openai sk-xxxx
 # ============================================================
 
@@ -17,9 +17,9 @@ declare -A ENV_KEYS=(
   [openai]="OPENAI_KEYS"
   [anthropic]="CLAUDE_KEYS"
   [deepseek]="DEEPSEEK_KEYS"
+  [xiaomi_sgp_coding]="XIAOMIMIMO_SGP_CODING_KEYS"
   [xiaomi]="XIAOMI_KEYS"
-  [xiaomimimo]="XIAOMIMIMO_KEYS"
-  [xiaomimimo_sgp]="XIAOMIMIMO_SGP_KEYS"
+  [xiaomi_coding]="XIAOMI_CODING_KEYS"
   [lpgpt]="LPGPT_KEYS"
 )
 
@@ -27,9 +27,9 @@ declare -A TEST_MODELS=(
   [openai]="gpt-4o-mini"
   [anthropic]="claude-3-5-haiku-20241022"
   [deepseek]="deepseek-chat"
+  [xiaomi_sgp_coding]="mimo-v2.5-pro"
   [xiaomi]="mimo-v2.5-pro"
-  [xiaomimimo]="mimo-v2.5-pro"
-  [xiaomimimo_sgp]="mimo-v2.5-pro"
+  [xiaomi_coding]="mimo-v2.5-pro"
   [lpgpt]="gpt-5.4"
 )
 
@@ -37,9 +37,9 @@ declare -A TEST_URLS=(
   [openai]="https://api.openai.com/v1/chat/completions"
   [anthropic]="https://api.anthropic.com/v1/messages"
   [deepseek]="https://api.deepseek.com/v1/chat/completions"
-  [xiaomi]="https://api.xiaomi.com/v1/chat/completions"
-  [xiaomimimo]="https://token-plan-cn.xiaomimimo.com/v1/chat/completions"
-  [xiaomimimo_sgp]="https://token-plan-sgp.xiaomimimo.com/v1/chat/completions"
+  [xiaomi_sgp_coding]="https://coding-plan-sgp.xiaomimimo.com/v1/chat/completions"
+  [xiaomi]="https://api.xiaomimimo.com/v1/chat/completions"
+  [xiaomi_coding]="https://coding-plan-cn.xiaomimimo.com/v1/chat/completions"
   [lpgpt]="https://lpgpt.us/v1/chat/completions"
 )
 
@@ -47,9 +47,9 @@ declare -A DISPLAY_NAMES=(
   [openai]="OpenAI"
   [anthropic]="Anthropic (Claude)"
   [deepseek]="DeepSeek"
-  [xiaomi]="Xiaomi (MiMo CN)"
-  [xiaomimimo]="Xiaomi MiMo (CN)"
-  [xiaomimimo_sgp]="Xiaomi MiMo (SGP)"
+  [xiaomi_sgp_coding]="Xiaomi SGP (Coding Plan)"
+  [xiaomi]="Xiaomi (API Key)"
+  [xiaomi_coding]="Xiaomi (Coding Plan)"
   [lpgpt]="LPGPT (GPT-5)"
 )
 
@@ -58,9 +58,9 @@ declare -A HEADER_FORMAT=(
   [openai]="openai"
   [anthropic]="anthropic"
   [deepseek]="openai"
+  [xiaomi_sgp_coding]="azure"
   [xiaomi]="openai"
-  [xiaomimimo]="azure"
-  [xiaomimimo_sgp]="azure"
+  [xiaomi_coding]="openai"
   [lpgpt]="openai"
 )
 
@@ -68,16 +68,16 @@ usage() {
   echo "用法: $0 <provider> <api_key>"
   echo ""
   echo "支持的 provider:"
-  echo "  openai          — OpenAI (GPT 系列)"
-  echo "  anthropic       — Anthropic (Claude 系列)"
-  echo "  deepseek        — DeepSeek"
-  echo "  xiaomi          — Xiaomi (MiMo CN)"
-  echo "  xiaomimimo      — Xiaomi MiMo (CN, token-plan-cn)"
-  echo "  xiaomimimo_sgp  — Xiaomi MiMo (SGP, token-plan-sgp)"
-  echo "  lpgpt           — LPGPT (GPT-5 系列, lpgpt.us)"
+  echo "  openai            — OpenAI (GPT 系列)"
+  echo "  anthropic         — Anthropic (Claude 系列)"
+  echo "  deepseek          — DeepSeek"
+  echo "  xiaomi_sgp_coding — Xiaomi SGP (Coding Plan)"
+  echo "  xiaomi            — Xiaomi (API Key)"
+  echo "  xiaomi_coding     — Xiaomi (Coding Plan)"
+  echo "  lpgpt             — LPGPT (GPT-5 系列, lpgpt.us)"
   echo ""
   echo "示例:"
-  echo "  $0 xiaomimimo_sgp tp-xxxx"
+  echo "  $0 xiaomi tp-xxxx"
   echo "  $0 openai sk-proj-xxxx"
   exit 1
 }

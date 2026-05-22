@@ -91,8 +91,8 @@ export function resolveFallbackModel(originalModel: string, targetProviderName: 
       }
       return 'deepseek-chat';
 
-    case 'xiaomimimo':
-      // xiaomimimo has mimo-v2.5-pro and mimo-v2.5-flash
+    case 'xiaomi_sgp_coding':
+      // SGP has both mimo-v2.5-pro and mimo-v2.5-flash
       if (
         lowerModel.includes('mini') ||
         lowerModel.includes('haiku') ||
@@ -104,7 +104,8 @@ export function resolveFallbackModel(originalModel: string, targetProviderName: 
       return 'mimo-v2.5-pro';
 
     case 'xiaomi':
-      // xiaomi only has mimo-v2.5-pro
+    case 'xiaomi_coding':
+      // Default (non-SGP) only has mimo-v2.5-pro
       return 'mimo-v2.5-pro';
 
     case 'openai':
