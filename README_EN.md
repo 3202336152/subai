@@ -10,7 +10,7 @@
 [![Edge Runtime](https://img.shields.io/badge/Edge_Runtime-⚡-black?logo=vercel)](https://vercel.com/docs/functions/edge-functions)
 [![Vercel KV](https://img.shields.io/badge/Vercel_KV-Redis-black?logo=redis)](https://vercel.com/docs/storage/vercel-kv)
 
-[English](README.md) · [中文](README_CN.md)
+[English](README_EN.md) · [中文](README.md)
 
 </div>
 
@@ -100,7 +100,7 @@ POST https://你的项目.vercel.app/v1/chat/completions
 **curl：**
 ```bash
 curl -X POST https://你的项目.vercel.app/v1/chat/completions \
-  -H "Authorization: Bearer YOUR_R...KEY" \
+  -H "Authorization: Bearer *** \
   -H "Content-Type: application/json" \
   -d '{"model": "gpt-4o", "messages": [{"role": "user", "content": "你好！"}]}'
 ```
