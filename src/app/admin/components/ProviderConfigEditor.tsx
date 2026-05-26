@@ -563,8 +563,7 @@ export default function ProviderConfigEditor({
                             color: fbModel ? '#60a5fa' : '#9ca3af',
                             fontSize: '0.75rem',
                             outline: 'none',
-                            flexShrink: 1,
-                            minWidth: 0,
+                            flexShrink: 0,
                             cursor: 'pointer',
                           }}
                         >
